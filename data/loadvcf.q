@@ -1,4 +1,11 @@
-\p 5002
+porto:{system("p ",string x)};
+@[porto;
+  5002;
+  {show "Port 5001 is in use. Shutting down.";
+   system"sleep 3";
+   exit 0}
+  ]
+
 .g.ipc.h:0N;
 .z.ps:{Q,::enlist x;if[.g.ipc.h;.g.ipc.h:hopen`::5001];loadvcf x};
 

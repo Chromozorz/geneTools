@@ -76,8 +76,9 @@ timerevert:{[]
  }
 /GC content calculation
 .g.util.gc:{[seq;mol]
- .g.util.paramchecker[`seq`mol!(seq;mol)];
- $[10h~type seq;seq:`$'(seq);:"Input sequence must be a string"];
+ paramdic:`seq`mol!(seq;mol);
+ if[not(::)~.g.util.paramchecker[paramdic];:.g.util.paramchecker[paramdic];];
+ seq:`$'seq;
  tot:count seq;
  gc:count where seq in `G`C;
  gccont:(100%tot)*gc;
@@ -86,23 +87,26 @@ timerevert:{[]
 
 /basic annealing temp calculation
 .g.util.ta:{[mol;seq]
- 64.9+41*((.g.util.gc[seq;mol]%100)*(count seq)-16.4)%count seq
+ paramdic:`seq`mol!(seq;mol);
+ if[not(::)~.g.util.paramchecker[paramdic];:.g.util.paramchecker[paramdic];];
+ :64.9+41*((.g.util.gc[seq;mol]%100)*(count seq)-16.4)%count seq;
  }
 
 /anhydrous molecular weight
 .g.util.amw:{[seq;mol]
- if[not any(all each("DNA";"RNA")in(trim upper string mol));
-    :"Input the type of molecule. e.g. `DNA. Your input was: `",raze string mol;
-   ]; 
- amw:"(An x 313.21) + (Tn x 304.2) + (Cn x 289.18) + (Gn x 329.21) - 61.96";
+ paramdic:`seq`mol!(seq;mol);
+ if[not(::)~.g.util.paramchecker[paramdic];:.g.util.paramchecker[paramdic];]; 
+ /base and weights dependent on mol param
+ ubiqbase:`A`T`G`C!(313.21 304.2 329.21 289.18);
  basecount:{[seq;base]count where (`$'seq)in base}[seq]each (`A`T`G`C;`A`U`G`C) (trim upper string mol)like "RNA"; 
- stop;
+ :(sum(value ubiqbase*/basecount))-61.96;
  }
 /##########################################Complement calc################################################
 .g.complement:{[seq;mol]
+ paramdic:`seq`mol!(seq;mol);
+ if[not(::)~.g.util.paramchecker[paramdic];:.g.util.paramchecker[paramdic];]; 
  dnamap:`A`T`C`G!`T`A`G`C;
  rnamap:`A`U`C`G!`U`A`G`C;
- $[10h~type seq;seq:`$'(seq);:"Input sequence must be a string"];
  if[(trim upper string mol)like "DNA";
     retseq:raze string dnamap seq;
    ]; 
@@ -113,6 +117,8 @@ timerevert:{[]
  }
 /##########################################Primer code ###################################################
 .g.primers:{[seq;mol;startp;endp;dnac;saltc]
+ paramdic:`seq`mol!(seq;mol);
+ if[not(::)~.g.util.paramchecker[paramdic];:.g.util.paramchecker[paramdic];];
  ampseq:seq (startp-1)+til 1+endp-startp;
  sseq:$[startp<200;
         sseq:seq til startp;
@@ -141,8 +147,6 @@ getprimers:{[mol;queryseq;start;end;dnac;saltc]
  }
 
 pickprimes:{[gccont;queryseq;allprimes;dnac;saltc;mol]
- /salt adjusted calc
- adj:"Tm= 64.9 +41*(yG+zC-16.4)/(wA+xT+yG+zC)";
  taquery:.g.util.ta[mol;queryseq];
  /calculate annealing temperature for each primer candidate
  allprimes:update anneal:.g.util.ta[mol]each allprimes`sequence from allprimes;
@@ -152,11 +156,15 @@ pickprimes:{[gccont;queryseq;allprimes;dnac;saltc;mol]
  }
 /##########################################Oligo Calc code################################################
 .g.oligocalc:{[seq;mol]
-  
+ paramdic:`seq`mol!(seq;mol);
+ if[not(::)~.g.util.paramchecker[paramdic];:.g.util.paramchecker[paramdic];];
+ stop;  
  }
 /##########################################Fst code######################################################
 .g.vcf:{[pathstring]
- .g.ipc.h:hopen`::5002;
+ handle:{value("hopen`::",string x)};
+ .g.ipc.h:@[handle;5002;{show "Cannot connect to remote process. Check README.txt"}];
+ /.g.ipc.h:hopen`::5002;
  neg[.g.ipc.h](pathstring);
  }
 
